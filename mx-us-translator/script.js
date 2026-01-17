@@ -28,52 +28,111 @@ function googleTranslateElementInit() {
             document.cookie = name + "=" + value + ";path=/;domain=" + window.location.hostname;
         }
 
-        // Determine current language from cookie
-        // Cookie format usually: /auto/en or /en/es. We focus on the target language.
-        var currentCookie = getCookie('googtrans');
-        var currentLang = 'es'; // Default assumption or fallback
+        // Inject Toggle and Loading Mask HTML dynamically
+        function injectElements() {
+            if ($('#mx-us-toggle-container').length) return;
 
-        if (currentCookie) {
-            // Check if it ends with /en or /es
-            if (currentCookie.match(/\/en$/)) {
-                currentLang = 'en';
-            } else if (currentCookie.match(/\/es$/)) {
-                currentLang = 'es';
-            }
+            // Loading Mask
+            var maskHTML = `
+                <div id="mx-us-loading-mask" class="mx-us-loading-mask">
+                    <div class="mx-us-loading-spinner"></div>
+                    <span id="mx-us-loading-text">Traduciendo...</span>
+                </div>
+            `;
+
+            // Toggle
+            var toggleHTML = `
+                <div id="mx-us-toggle-container">
+                    <div class="mx-us-toggle-wrapper notranslate">
+                        <div class="mx-us-option" data-lang="es" title="Español (México)">
+                            <span class="flag-icon flag-mx"></span>
+                            <span class="lang-label">ES</span>
+                        </div>
+                        <div class="mx-us-divider">|</div>
+                        <div class="mx-us-option" data-lang="en" title="English (USA)">
+                            <span class="flag-icon flag-us"></span>
+                            <span class="lang-label">EN</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('body').append(maskHTML + toggleHTML);
         }
 
-        // Set active class on load
-        $('.mx-us-option[data-lang="' + currentLang + '"]').addClass('active');
+        // Show loading mask with specific text
+        function showLoadingMask(targetLang) {
+            var text = targetLang === 'es' ? 'Traduciendo...' : 'Translating...';
+            $('#mx-us-loading-text').text(text);
+            $('#mx-us-loading-mask').addClass('active');
+        }
 
-        // Handle Click
-        $('.mx-us-option').on('click', function () {
-            var selectedLang = $(this).data('lang');
+        // Hide loading mask
+        function hideLoadingMask() {
+            $('#mx-us-loading-mask').removeClass('active');
+        }
 
-            // If already active, do nothing
-            if ($(this).hasClass('active')) {
+        // Determine initial language based on geolocation
+        function detectLocationAndSetLang() {
+            var currentCookie = getCookie('googtrans');
+
+            // If cookie exists, we already have a preference
+            if (currentCookie) {
+                applyLangFromCookie(currentCookie);
+                // If it's not the default (English usually), show mask while it loads
+                if (!currentCookie.match(/\/en$/)) {
+                    showLoadingMask('es');
+                }
                 return;
             }
 
-            // Construct new cookie value: /auto/selectedLang
-            // This tells Google Translate to translate from Auto to Selected
+            // Otherwise, check geolocation
+            $.getJSON('https://ipapi.co/json/', function (data) {
+                var detectedLang = 'en'; // Default
+                if (data.country_code === 'MX') {
+                    detectedLang = 'es';
+                }
+
+                if (detectedLang === 'es') {
+                    showLoadingMask('es');
+                    var newCookieValue = '/auto/es';
+                    setCookie('googtrans', newCookieValue, 30);
+                    window.location.reload();
+                } else {
+                    $('.mx-us-option[data-lang="en"]').addClass('active');
+                }
+            }).fail(function () {
+                $('.mx-us-option[data-lang="en"]').addClass('active');
+            });
+        }
+
+        function applyLangFromCookie(cookie) {
+            var currentLang = 'en';
+            if (cookie.match(/\/es$/)) {
+                currentLang = 'es';
+            }
+            $('.mx-us-option[data-lang="' + currentLang + '"]').addClass('active');
+        }
+
+        // Initialize
+        injectElements();
+        detectLocationAndSetLang();
+
+        // Handle Click
+        $(document).on('click', '.mx-us-option', function () {
+            var selectedLang = $(this).data('lang');
+            if ($(this).hasClass('active')) return;
+
+            showLoadingMask(selectedLang);
             var newCookieValue = '/auto/' + selectedLang;
-
-            // Set cookie for top level domain
-            setCookie('googtrans', newCookieValue, 30); // 30 days
-            setCookie('googtrans', newCookieValue, 30); // secure/host variants sometimes needed, but standard path=/ usually works for simple sites.
-
-            // Reload page to apply
+            setCookie('googtrans', newCookieValue, 30);
             window.location.reload();
         });
 
-        // Force hide Google Translate top bar
-        // Google checks and resets this sometimes, so we enforce it.
+        // Force hide Google Translate top bar & control loading mask
         $('body').css('top', '0px');
 
-        // Use an observer or interval to ensure it stays hidden if injected asynchronously
         var checkBanner = setInterval(function () {
             var iframe = $('.goog-te-banner-frame');
-            // Try to find by ID if class is missing but structure matches
             if (!iframe.length) {
                 iframe = $('iframe[id*=".container"]');
             }
@@ -84,13 +143,22 @@ function googleTranslateElementInit() {
                 iframe.css('height', '0');
                 $('body').css('top', '0px');
                 $('body').css('position', 'static');
+
+                // Once Google is hidden, we can hide our mask
+                hideLoadingMask();
             }
-            // Also target the new skiptranslate banner if present
+
+            // Fallback for safety: if translation finished class is present on html/body
+            if ($('html').hasClass('translated-ltr') || $('html').hasClass('translated-rtl')) {
+                // If the iframe hasn't appeared yet but translation happened, hide mask soon
+                setTimeout(hideLoadingMask, 500);
+            }
+
             $('.skiptranslate').each(function () {
                 if ($(this).text().indexOf('Translate') > -1) {
-                    // Often the banner is a direct child of body
                     if ($(this).parent().is('body')) {
                         $(this).hide();
+                        hideLoadingMask();
                     }
                 }
             });
