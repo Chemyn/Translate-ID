@@ -1,11 +1,11 @@
 /**
  * Google Translate Initialization.
- * Configures the Google Translate element to use 'en' and 'es' languages.
- * Layout is set to SIMPLE (inline), and autoDisplay is false to hide the popup.
+ * Configures the Google Translate element to use 'es' as the source language.
+ * Included languages are 'en' and 'es'.
  */
 function googleTranslateElementInit() {
     new google.translate.TranslateElement({
-        pageLanguage: 'auto',
+        pageLanguage: 'es', // Original language is Spanish
         includedLanguages: 'en,es',
         layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
         autoDisplay: false
@@ -26,6 +26,11 @@ function googleTranslateElementInit() {
             var d = new Date;
             d.setTime(d.getTime() + 24 * 60 * 60 * 1000 * days);
             document.cookie = name + "=" + value + ";path=/;domain=" + window.location.hostname;
+        }
+
+        // Helper to delete cookie
+        function deleteCookie(name) {
+            document.cookie = name + "=;path=/;domain=" + window.location.hostname + ";expires=Thu, 01 Jan 1970 00:00:00 UTC;";
         }
 
         // Inject Toggle and Loading Mask HTML dynamically
@@ -78,14 +83,9 @@ function googleTranslateElementInit() {
             // If cookie exists, we already have a preference
             if (currentCookie) {
                 applyLangFromCookie(currentCookie);
-                // Show mask for both languages to provide visual feedback/consistency
-                // Determine direction
-                var target = currentCookie.match(/\/es$/) ? 'es' : 'en';
-                showLoadingMask(target);
-
-                // For English (Source), the Google loop might not find a banner/class to trigger hide.
-                // So we force a hide after a short delay if it's English.
-                if (target === 'en') {
+                // If it's translating to English, show mask
+                if (currentCookie.match(/\/en$/)) {
+                    showLoadingMask('en');
                     setTimeout(hideLoadingMask, 1500);
                 }
                 return;
@@ -93,28 +93,25 @@ function googleTranslateElementInit() {
 
             // Otherwise, check geolocation
             $.getJSON('https://ipapi.co/json/', function (data) {
-                var detectedLang = 'en'; // Default
-                if (data.country_code === 'MX') {
-                    detectedLang = 'es';
-                }
-
-                if (detectedLang === 'es') {
-                    showLoadingMask('es');
-                    var newCookieValue = '/auto/es';
-                    setCookie('googtrans', newCookieValue, 30);
+                if (data.country_code === 'US') {
+                    // Users from US get English
+                    showLoadingMask('en');
+                    setCookie('googtrans', '/es/en', 30);
                     window.location.reload();
                 } else {
-                    $('.mx-us-option[data-lang="en"]').addClass('active');
+                    // Everyone else (including MX) stays in native Spanish
+                    $('.mx-us-option[data-lang="es"]').addClass('active');
                 }
             }).fail(function () {
-                $('.mx-us-option[data-lang="en"]').addClass('active');
+                // Default to Spanish (native)
+                $('.mx-us-option[data-lang="es"]').addClass('active');
             });
         }
 
         function applyLangFromCookie(cookie) {
-            var currentLang = 'en';
-            if (cookie.match(/\/es$/)) {
-                currentLang = 'es';
+            var currentLang = 'es'; // Default is Spanish
+            if (cookie.match(/\/en$/)) {
+                currentLang = 'en';
             }
             $('.mx-us-option[data-lang="' + currentLang + '"]').addClass('active');
         }
@@ -129,8 +126,15 @@ function googleTranslateElementInit() {
             if ($(this).hasClass('active')) return;
 
             showLoadingMask(selectedLang);
-            var newCookieValue = '/auto/' + selectedLang;
-            setCookie('googtrans', newCookieValue, 30);
+
+            if (selectedLang === 'es') {
+                // Revert to native Spanish by clearing cookie
+                deleteCookie('googtrans');
+            } else {
+                // Translate to English
+                setCookie('googtrans', '/es/en', 30);
+            }
+
             window.location.reload();
         });
 
@@ -156,7 +160,6 @@ function googleTranslateElementInit() {
 
             // Fallback for safety: if translation finished class is present on html/body
             if ($('html').hasClass('translated-ltr') || $('html').hasClass('translated-rtl')) {
-                // If the iframe hasn't appeared yet but translation happened, hide mask soon
                 setTimeout(hideLoadingMask, 1500);
             }
 
@@ -170,7 +173,7 @@ function googleTranslateElementInit() {
             });
         }, 500);
 
-        // Final safety net: Always hide mask after 5 seconds no matter what
+        // Final safety net
         setTimeout(hideLoadingMask, 5000);
 
     });
