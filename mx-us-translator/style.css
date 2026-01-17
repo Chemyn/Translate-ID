@@ -1,0 +1,96 @@
+/**
+ * MX-US Translator Styles
+ * Handles the visual customization of the translation toggle and
+ * hides the default Google Translate elements.
+ */
+
+/* Hide Google Translate Toolbar */
+.goog-te-banner-frame.skiptranslate {
+    display: none !important;
+}
+
+body {
+    top: 0px !important;
+}
+
+#google_translate_element {
+    display: none !important;
+}
+
+/* Toggle Container */
+#mx-us-toggle-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 99999;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.mx-us-toggle-wrapper {
+    background: #ffffff;
+    border-radius: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    padding: 5px 10px;
+    transition: all 0.3s ease;
+    border: 1px solid #e1e1e1;
+}
+
+.mx-us-toggle-wrapper:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.mx-us-option {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 5px 8px;
+    border-radius: 20px;
+    opacity: 0.6;
+    transition: opacity 0.3s, background 0.3s;
+}
+
+.mx-us-option:hover {
+    opacity: 0.6;
+    /* Slight hover effect for non-active */
+    background: #f5f5f5;
+}
+
+.mx-us-option.active {
+    opacity: 1;
+    font-weight: bold;
+    background: #f0f0f0;
+}
+
+.mx-us-divider {
+    color: #ccc;
+    margin: 0 5px;
+    font-size: 14px;
+}
+
+.flag-icon {
+    width: 24px;
+    height: 18px;
+    display: inline-block;
+    background-size: cover;
+    background-position: center;
+    border-radius: 2px;
+    margin-right: 6px;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+}
+
+.lang-label {
+    font-size: 14px;
+    color: #333;
+}
+
+/* Mexico Flag SVG Data URI */
+.flag-mx {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480"><path fill="%23006341" d="M0 0h213.3v480H0z"/><path fill="%23fff" d="M213.3 0h213.4v480H213.3z"/><path fill="%23c8102e" d="M426.7 0h213.3v480H426.7z"/><path d="M320 180c-25 0-45 20-45 45s20 45 45 45 45-20 45-45-20-45-45-45z" fill="%236e4c19"/></svg>');
+}
+
+/* USA Flag SVG Data URI */
+.flag-us {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480"><path fill="%23bd3d44" d="M0 0h640v480H0"/><path stroke="%23fff" stroke-width="37" d="M0 55.3h640M0 129h640M0 202.8h640M0 276.5h640M0 350.2h640M0 423.9h640"/><path fill="%23192f5d" d="M0 0h364.8v258.5H0"/><text x="17" y="55" font-size="44" fill="%23fff">★</text><text x="67" y="55" font-size="44" fill="%23fff">★</text><text x="117" y="55" font-size="44" fill="%23fff">★</text><text x="167" y="55" font-size="44" fill="%23fff">★</text><text x="217" y="55" font-size="44" fill="%23fff">★</text><text x="17" y="125" font-size="44" fill="%23fff">★</text><text x="67" y="125" font-size="44" fill="%23fff">★</text><text x="117" y="125" font-size="44" fill="%23fff">★</text><text x="167" y="125" font-size="44" fill="%23fff">★</text><text x="217" y="125" font-size="44" fill="%23fff">★</text></svg>');
+}
