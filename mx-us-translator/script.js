@@ -58,6 +58,15 @@ function googleTranslateElementInit() {
             document.cookie = name + "=" + value + expires + ";path=/;domain=" + domain;
         }
 
+        // Prevent translation of specific branding
+        function addNoTranslateAttributes() {
+            $('.text-2xl.font-display.font-bold.tracking-tighter').each(function () {
+                if ($(this).text().indexOf('IMPERIO') !== -1) {
+                    $(this).addClass('notranslate');
+                }
+            });
+        }
+
         // Inject Toggle and Loading Mask HTML dynamically
         function injectElements() {
             if ($('#mx-us-toggle-container').length) return;
@@ -142,6 +151,7 @@ function googleTranslateElementInit() {
         }
 
         // Initialize
+        addNoTranslateAttributes();
         injectElements();
         detectLocationAndSetLang();
 
